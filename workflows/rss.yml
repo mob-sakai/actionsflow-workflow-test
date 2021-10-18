@@ -1,17 +1,24 @@
 on:
   rss:
-    url: https://hnrss.org/newest?points=300&count=3
+    url:
+      - https://unity3d.com/unity/beta/latest.xml
+      - https://unity3d.com/unity/releases.xml
+    config:
+      filterOutputs:
+        title: 1
+      limit: 1
 jobs:
-  print:
-    name: Print
+  dispatch:
+    name: Repository Dispatch
     runs-on: ubuntu-latest
     steps:
-      - name: Print Outputs
-        env:
-          title: ${{on.rss.outputs.title}}
-          contentSnippet: ${{on.rss.outputs.contentSnippet}}
-          link: ${{on.rss.outputs.link}}
+      - name: Parse released version
         run: |
-          echo title: $title
-          echo contentSnippet: $contentSnippet
-          echo link: $link
+          version=`echo '${{ on.rss.outputs.title }}' | cut -d ' ' -f2`
+          echo "version=$version" >> $GITHUB_ENV | tee
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          repository: mob-sakai/docker
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+          event-type: build_all
